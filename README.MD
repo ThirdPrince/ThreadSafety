@@ -100,8 +100,41 @@ fun main() = runBlocking {
 第三个例子：count结果是1000,和第一个例子一样，因为没有发生线程切换，并不会出现并发安全，所以答案是1000。
 第四个例子：count结果是1000，在等待的结果中+1，并不会出现并发安全，所以答案是1000。
 
+5,并发获取User的例子，记录获取成功的count
+
+fun main() = runBlocking {
+
+     val startTime = System.currentTimeMillis()
+     val userIds: MutableList<Int> = ArrayList()
+     for (i in 1..1000) {
+          userIds.add(i)
+     }
+     var count = userIds.size
+     val map: MutableMap<Int, User> = HashMap()
+     val deferredResults = userIds.map { userId ->
+          async {
+               val user = getUserAsync(userId)
+               //log("userId-->$userId :::: user --->  $user")
+               map[userId] = user
+               map
+          }
+     }
 
 
+     // 获取每个 async 任务的结果
+     val results = deferredResults.map { deferred ->
+          count--
+          log("count  $count")
+          deferred.await()
+     }
+     val costTime = (System.currentTimeMillis() - startTime) / 1000
+     log("count -> $count")
+     log("costTime-->$costTime")
+     log("user size -> ${results.size}")
+
+}
+
+这个count 就不需要额外的同步，想想这是为什么？
 
 
 
